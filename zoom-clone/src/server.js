@@ -9,22 +9,29 @@ app.set('views', __dirname + "/views");
 app.use('/public', express.static(__dirname + '/public'))
 
 app.get('/', (req, res) => res.render('home'));
-
 // app.listen(3000, () => console.log('http://localhost:3000'));
 
 const server = http.createServer(app);
 
-const sockets = new Set();
-
 const wss = new WebSocket.Server({ server });
+const sockets = [] // 연결된 브라우저 저장소
+
 wss.on("connection", (socket) => { // socket : 연결된 브라우저
-  sockets.add(socket);
+  sockets.push(socket);
+  socket["nickname"] = 'Anon';
   console.log('Connected to Browser ✅');
   socket.on("close", () => console.log('Disconnected from the Browser ❌'))
-  socket.on('message', message => {
-    socket.send(message.toString());
+  socket.on('message', msg => {
+    const message = JSON.parse(msg.toString());
+    switch(message.type) {
+    case 'new_message': 
+      sockets.forEach(aSocket => {
+        aSocket.send(`${socket.nickname}: ${message.payload}`);
+      })
+    case 'nickname': 
+      socket["nickname"] = message.payload
+    }
   })
-  socket.send('hello');
 });
 
 server.listen(3000, () => console.log('http://localhost:3000, ws://localhost:3000'));
