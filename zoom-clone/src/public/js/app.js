@@ -15,6 +15,9 @@ let roomName = ''
 
 /** @type {RTCPeerConnection} */
 let myPeerConnection;
+/** @type {RTCDataChannel} */
+let myDataChannel;
+// myDataChannel.send(data)
 
 const getCameras = async () => {
   try {
@@ -114,6 +117,9 @@ welcomeForm.addEventListener('submit', handlerRoomSubmit)
 // Socket code
 socket.on('welcome', async () => {
   console.log('joined!');
+  myDataChannel = myPeerConnection.createDataChannel("chat");
+  myDataChannel.addEventListener('message', (console.log));
+  console.log('made data channel');
   const offer = await myPeerConnection.createOffer();
   myPeerConnection.setLocalDescription(offer)
   console.log('sent the offer')
@@ -121,6 +127,10 @@ socket.on('welcome', async () => {
 });
 
 socket.on('offer', async (offer) => {
+  myPeerConnection.addEventListener('datachannel', data => {
+    myDataChannel = data.channel;
+    myDataChannel.addEventListener('message', console.log);
+  })
   console.log('received the offer')
   myPeerConnection.setRemoteDescription(offer);
   const answer = await myPeerConnection.createAnswer();
