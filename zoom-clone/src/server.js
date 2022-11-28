@@ -30,12 +30,19 @@ const countRoom = (roomName) => {
 }
 
 wsServer.on("connection", socket => {
+  socket.on('join_room', (roomName) => {
+    socket.join(roomName)
+    socket.to(roomName).emit('welcome')
+  });
+  socket.on('offer', (offer, roomName) => {
+    socket.to(roomName).emit('offer', offer)
+  })
+  socket.on('answer', (answer, roomName) => {
+    socket.to(roomName).emit('answer', answer);
+  })
+
   socket['nickname'] = 'Anon';
 
-  // socket.onAny('event', (event) => {
-  //   console.log(event);
-  // })
-  
   socket.on('enter_room', (roomName, done) => {
     socket.join(roomName); // Room 생성
     done();
