@@ -77,6 +77,11 @@ const handlerCameraClick = (ev) => {
 
 const handlerCameraChange = async (ev) => {
   await getMedia(camerasSelect.value)
+  if (myPeerConnection) {
+    const videoTrack = myStream.getVideoTracks()[0];
+    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === 'video')
+    videoSender.replaceTrack(videoTrack)
+  }
 }
 
 muteBtn.addEventListener('click', handlerMuteClick)
@@ -136,9 +141,23 @@ socket.on('ice', (ice) => {
 
 // RTC Code
 function makeConnection() {
-  myPeerConnection = new RTCPeerConnection();
+  myPeerConnection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: [
+          "stun:stun.l.google.com:19302",
+          "stun:stun1.l.google.com:19302",
+          "stun:stun2.l.google.com:19302",
+          "stun:stun3.l.google.com:19302",
+          "stun:stun4.l.google.com:19302",
+        ],
+      },
+    ],
+  });
   myPeerConnection.addEventListener('icecandidate', handlerIce)
   myPeerConnection.addEventListener('addstream', handlerAddStream)
+  // myPeerConnection.addEventListener("track", handleTrack)
+
   myStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myStream))
 }
 
@@ -151,7 +170,11 @@ const handlerAddStream = (data) => {
   console.log('got an stream from my peer')
   // console.log("Peer's Stream", data.stream) // 다른 브라우저에서 온 스트림
   // console.log("My Stream", myStream) // 내 브라우저 스트림
-  
+  const peerFace = document.getElementById('peerFace')
+  peerFace.srcObject = data.stream;
+}
+
+const handleTrack = (data) => {
   const peerFace = document.getElementById('peerFace')
   peerFace.srcObject = data.stream;
 }
